@@ -1,4 +1,7 @@
-# LLM Output Arbitration System
+# Veritas — LLM Output Arbitration System
+
+**Live demo:** https://veritas-fvlw.onrender.com/
+> Hosted on Render's free tier — spins down after 15 minutes of inactivity, so the first load can take 30–50 seconds to wake up.
 
 Give it a **question** and an **LLM-generated answer**. Four independent critics check the answer, then an
 **arbiter** combines their findings into one ruling: verdict, confidence, per-critic scores, issues with severity,
