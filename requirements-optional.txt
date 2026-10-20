@@ -1,0 +1,4 @@
+# Only install what you need if you switch LLM_PROVIDER / EMBEDDING_PROVIDER in .env
+langchain-openai      # LLM_PROVIDER=openai  or  EMBEDDING_PROVIDER=openai
+langchain-anthropic   # LLM_PROVIDER=anthropic
+langchain-ollama      # LLM_PROVIDER=ollama (local models)

@@ -1,0 +1,8 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+storage/chroma/
+storage/fastembed/
+.pytest_cache/

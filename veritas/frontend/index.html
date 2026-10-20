@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Veritas — LLM Output Arbitration</title>
+  <meta name="description" content="Veritas reviews an LLM-generated answer with four independent critics — accuracy, grounding, consistency and completeness — and arbitrates a final verdict.">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2.5 20.5 6v6c0 5.1-3.6 9.2-8.5 10.5C7.1 21.2 3.5 17.1 3.5 12V6L12 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.3 12.3 11 15l5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <div class="brand-text">
+          <span class="brand-name">Veritas</span>
+          <span class="brand-tagline">LLM output arbitration</span>
+        </div>
+      </div>
+      <dl class="status" id="status" aria-label="System status"></dl>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <main class="layout" id="main">
+    <section class="panel case" aria-labelledby="case-h">
+      <div class="panel-head">
+        <h2 id="case-h">Case file</h2>
+        <p class="panel-sub">Submit a question-and-answer pair for the panel to review.</p>
+      </div>
+
+      <div class="panel-body">
+        <div class="examples">
+          <span class="field-label">Try a sample</span>
+          <div id="examples" class="chips"></div>
+        </div>
+
+        <label class="field">
+          <span class="field-label">Question that was asked</span>
+          <textarea id="question" rows="2" placeholder="What was the LLM asked?"></textarea>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Answer under review</span>
+          <textarea id="answer" rows="9" placeholder="Paste the LLM-generated answer you want to check."></textarea>
+        </label>
+
+        <details class="opt">
+          <summary>Extra reference text for this run</summary>
+          <div class="opt-body">
+            <textarea id="context" rows="5" placeholder="Optional. Paste source text here and it is searched together with the knowledge base, for this evaluation only."></textarea>
+          </div>
+        </details>
+
+        <details class="opt">
+          <summary>Run settings</summary>
+          <div class="opt-body">
+            <fieldset class="critic-toggles">
+              <legend class="field-label">Critics to run</legend>
+              <label><input type="checkbox" name="critic" value="accuracy" checked><span>Accuracy</span></label>
+              <label><input type="checkbox" name="critic" value="consistency" checked><span>Consistency</span></label>
+              <label><input type="checkbox" name="critic" value="completeness" checked><span>Completeness</span></label>
+              <label><input type="checkbox" name="critic" value="grounding" checked><span>Grounding</span></label>
+            </fieldset>
+            <div class="num-row">
+              <label>Self-check samples <input type="number" id="samples" min="0" max="5" placeholder="default"></label>
+              <label>Passages per lookup <input type="number" id="topk" min="1" max="10" placeholder="default"></label>
+            </div>
+          </div>
+        </details>
+
+        <button id="run" class="primary" type="button">Run arbitration</button>
+        <p id="error" class="error" role="alert" hidden></p>
+      </div>
+
+      <div class="panel-divider" role="separator"></div>
+
+      <div class="panel-head">
+        <h2 id="kb-h">Knowledge base</h2>
+        <p class="panel-sub" id="kb-summary">Loading…</p>
+      </div>
+      <div class="panel-body" aria-labelledby="kb-h">
+        <ul id="kb-list" class="kb-list"></ul>
+        <div class="kb-actions">
+          <label class="filebtn">Upload files
+            <input type="file" id="upload" multiple accept=".md,.txt,.pdf" hidden>
+          </label>
+          <button id="reindex" class="quiet" type="button">Re-index sample documents</button>
+        </div>
+        <details class="opt">
+          <summary>Add a document by pasting text</summary>
+          <div class="opt-body">
+            <input type="text" id="doc-name" placeholder="Document name, e.g. company-policy.txt">
+            <textarea id="doc-text" rows="4" placeholder="Paste the document text"></textarea>
+            <button id="doc-add" class="quiet" type="button">Add to knowledge base</button>
+          </div>
+        </details>
+        <p class="hint" id="kb-msg" role="status"></p>
+      </div>
+    </section>
+
+    <section class="panel ruling" id="ruling" aria-live="polite" aria-labelledby="ruling-h">
+      <h2 id="ruling-h" class="visually-hidden">Ruling</h2>
+
+      <div id="empty" class="empty">
+        <p class="empty-title">No ruling yet</p>
+        <p>Pick a sample or paste a question and an answer, then choose <strong>Run arbitration</strong>. Each critic checks something different:</p>
+        <dl class="glossary">
+          <dt>Accuracy</dt><dd>Is each claim actually true?</dd>
+          <dt>Grounding</dt><dd>Do the retrieved documents back each claim?</dd>
+          <dt>Consistency</dt><dd>Does the answer contradict itself or fresh samples of the same question?</dd>
+          <dt>Completeness</dt><dd>Does it cover everything the question asks for?</dd>
+        </dl>
+      </div>
+
+      <div id="loading" class="loading" hidden>
+        <p class="empty-title">The panel is deliberating</p>
+        <p>Extracting claims, retrieving evidence, running four critics in parallel, then arbitrating. This takes a few seconds to about a minute with a hosted model.</p>
+        <div class="bar-indeterminate" aria-hidden="true"><span></span></div>
+      </div>
+
+      <div id="result" hidden></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Veritas — four independent critics, one arbitrated verdict.</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
